@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Héritage de la vue formulaire du bon de commande -->
+    <!-- On utilise inherit_id pour étendre la vue existante -->
+    <record id="view_order_form_inherit_sms" model="ir.ui.view">
+        <field name="name">sale.order.form.inherit.sms</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <!-- Ajouter le champ project_ref après le champ client_order_ref -->
+            <xpath expr="//field[@name='client_order_ref']" position="after">
+                <field name="project_ref"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
