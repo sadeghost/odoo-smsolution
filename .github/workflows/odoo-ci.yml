@@ -1,0 +1,93 @@
+name: Odoo CI - Tests & Lint
+on:
+  push:
+    branches: [staging]
+  pull_request:
+    branches: [production]
+jobs:
+  lint:
+    name: "Lint - Verification qualite code"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install linting tools
+        run: pip install flake8
+      - name: Run flake8
+        run: |
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=.git,__pycache__,.github
+          echo "No syntax errors found"
+  test:
+    name: "Tests Unitaires Odoo"
+    runs-on: ubuntu-latest
+    needs: lint
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: odoo
+          POSTGRES_PASSWORD: odoo
+          POSTGRES_DB: odoo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libxml2-dev libxslt1-dev libldap2-dev libsasl2-dev libpq-dev libjpeg-dev
+      - name: Clone Odoo 18
+        run: git clone --depth 1 -b 18.0 https://github.com/odoo/odoo.git /tmp/odoo
+      - name: Install Odoo dependencies
+        run: |
+          pip install -r /tmp/odoo/requirements.txt
+          pip install psycopg2-binary
+      - name: Detect modules with tests
+        id: detect
+        run: |
+          MODULES=""
+          for dir in custom_modules/*/tests native_overrides/*/tests third_party_modules/*/tests oca_modules/*/tests; do
+            if [ -d "$dir" ]; then
+              MODULE=$(basename $(dirname "$dir" ))
+              MODULES="$MODULES,$MODULE"
+            fi
+          done
+          MODULES=$(echo "$MODULES" | sed 's/^,//')
+          echo "modules=$MODULES" >> $GITHUB_OUTPUT
+          echo "Modules to test: $MODULES"
+      - name: Run Odoo tests
+        if: steps.detect.outputs.modules != ''
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: odoo
+          PGPASSWORD: odoo
+        run: |
+          ADDONS_PATH="/tmp/odoo/addons,$PWD/custom_modules,$PWD/third_party_modules,$PWD/oca_modules,$PWD/native_overrides"
+          python /tmp/odoo/odoo-bin --addons-path="$ADDONS_PATH" -d odoo_test --db_host=localhost --db_port=5432 --db_user=odoo --db_password=odoo -i ${{ steps.detect.outputs.modules }} --test-enable --stop-after-init --log-level=test 2>&1 | tee /tmp/test_output.log
+          if grep -q "FAIL" /tmp/test_output.log; then
+            echo "Tests failed!"
+            exit 1
+          else
+            echo "All tests passed!"
+          fi
+  gate-production:
+    name: "Production Gate - Ready to merge"
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'pull_request' && github.base_ref == 'production'
+    steps:
+      - name: Production gate check
+        run: echo "All checks passed - PR can be merged to production"
