@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Action principale -->
+    <record id="action_sms_intervention" model="ir.actions.act_window">
+        <field name="name">Interventions</field>
+        <field name="res_model">sms.intervention</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_filter_my_interventions': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Créer votre première intervention
+            </p>
+            <p>
+                Planifiez et suivez les interventions techniques de votre équipe.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu principal (application) -->
+    <menuitem id="menu_sms_intervention_root"
+              name="Interventions"
+              sequence="100"/>
+
+    <!-- Sous-menu : Interventions -->
+    <menuitem id="menu_sms_intervention_main"
+              name="Toutes les Interventions"
+              parent="menu_sms_intervention_root"
+              action="action_sms_intervention"
+              sequence="10"/>
+
+</odoo>

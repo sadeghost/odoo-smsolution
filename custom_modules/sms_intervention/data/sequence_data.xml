@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Séquence pour les interventions : INT/0001, INT/0002, etc. -->
+        <record id="seq_sms_intervention" model="ir.sequence">
+            <field name="name">Intervention Technique</field>
+            <field name="code">sms.intervention</field>
+            <field name="prefix">INT/</field>
+            <field name="padding">4</field>
+            <field name="company_id" eval="False"/>
+        </record>
+    </data>
+</odoo>

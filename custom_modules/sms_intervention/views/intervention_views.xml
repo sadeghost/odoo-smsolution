@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Vue Formulaire -->
+    <record id="view_sms_intervention_form" model="ir.ui.view">
+        <field name="name">sms.intervention.form</field>
+        <field name="model">sms.intervention</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_plan" string="Planifier"
+                            type="object" class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_start" string="Démarrer"
+                            type="object" class="btn-primary"
+                            invisible="state != 'planned'"/>
+                    <button name="action_done" string="Terminer"
+                            type="object" class="btn-success"
+                            invisible="state != 'in_progress'"/>
+                    <button name="action_cancel" string="Annuler"
+                            type="object"
+                            invisible="state in ('done', 'cancelled')"/>
+                    <button name="action_reset_draft" string="Remettre en Brouillon"
+                            type="object"
+                            invisible="state not in ('cancelled',)"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,planned,in_progress,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Informations Générales">
+                            <field name="partner_id"/>
+                            <field name="technician_id"/>
+                            <field name="intervention_type"/>
+                            <field name="priority" widget="priority"/>
+                        </group>
+                        <group string="Planification">
+                            <field name="date_planned"/>
+                            <field name="date_done"/>
+                            <field name="duration" widget="float_time"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Description du Problème">
+                            <field name="description"
+                                   placeholder="Décrivez le problème rencontré par le client..."/>
+                        </page>
+                        <page string="Résolution">
+                            <field name="resolution"
+                                   placeholder="Décrivez la solution apportée..."/>
+                        </page>
+                        <page string="Notes Internes">
+                            <field name="notes"
+                                   placeholder="Notes internes (non visibles par le client)..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vue Liste -->
+    <record id="view_sms_intervention_tree" model="ir.ui.view">
+        <field name="name">sms.intervention.tree</field>
+        <field name="model">sms.intervention</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="priority == '2'"
+                  decoration-warning="priority == '1'"
+                  decoration-muted="state == 'cancelled'">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="technician_id"/>
+                <field name="intervention_type"/>
+                <field name="date_planned"/>
+                <field name="duration" widget="float_time"/>
+                <field name="priority" widget="priority" nolabel="1"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-primary="state == 'planned'"
+                       decoration-warning="state == 'in_progress'"
+                       decoration-success="state == 'done'"
+                       decoration-danger="state == 'cancelled'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Vue Recherche -->
+    <record id="view_sms_intervention_search" model="ir.ui.view">
+        <field name="name">sms.intervention.search</field>
+        <field name="model">sms.intervention</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="technician_id"/>
+                <filter name="filter_draft" string="Brouillon"
+                        domain="[('state', '=', 'draft')]"/>
+                <filter name="filter_planned" string="Planifiées"
+                        domain="[('state', '=', 'planned')]"/>
+                <filter name="filter_in_progress" string="En Cours"
+                        domain="[('state', '=', 'in_progress')]"/>
+                <filter name="filter_done" string="Terminées"
+                        domain="[('state', '=', 'done')]"/>
+                <separator/>
+                <filter name="filter_urgent" string="Urgentes"
+                        domain="[('priority', 'in', ['1', '2'])]"/>
+                <separator/>
+                <filter name="filter_my_interventions" string="Mes Interventions"
+                        domain="[('technician_id', '=', uid)]"/>
+                <group expand="0" string="Grouper par">
+                    <filter name="group_state" string="Statut"
+                            context="{'group_by': 'state'}"/>
+                    <filter name="group_technician" string="Technicien"
+                            context="{'group_by': 'technician_id'}"/>
+                    <filter name="group_type" string="Type"
+                            context="{'group_by': 'intervention_type'}"/>
+                    <filter name="group_partner" string="Client"
+                            context="{'group_by': 'partner_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+</odoo>
